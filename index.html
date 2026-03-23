@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Collection Launcher</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 115.47'%3E%3Cpolygon points='50,4 96,28.74 96,86.73 50,111.47 4,86.73 4,28.74' fill='%23061a12' stroke='%2300ffaa' stroke-width='3'/%3E%3Cpolygon points='50,14 86,33.74 86,81.73 50,101.47 14,81.73 14,33.74' fill='none' stroke='%2300ffaa' stroke-width='1' stroke-opacity='0.35'/%3E%3Ccircle cx='50' cy='57.74' r='10' fill='%2300ffaa' fill-opacity='0.25'/%3E%3Ccircle cx='50' cy='57.74' r='4' fill='%2300ffaa'/%3E%3Cline x1='50' y1='4' x2='50' y2='14' stroke='%2300ffaa' stroke-width='3'/%3E%3Cline x1='96' y1='28.74' x2='86' y2='33.74' stroke='%2300ffaa' stroke-width='3'/%3E%3Cline x1='96' y1='86.73' x2='86' y2='81.73' stroke='%2300ffaa' stroke-width='3'/%3E%3Cline x1='50' y1='111.47' x2='50' y2='101.47' stroke='%2300ffaa' stroke-width='3'/%3E%3Cline x1='4' y1='86.73' x2='14' y2='81.73' stroke='%2300ffaa' stroke-width='3'/%3E%3Cline x1='4' y1='28.74' x2='14' y2='33.74' stroke='%2300ffaa' stroke-width='3'/%3E%3C/svg%3E">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+  :root {
+    --bg: #040810;
+    --bg2: #080f1a;
+    --grid: #0a1628;
+    --accent: #00d4ff;
+    --accent2: #7b2fff;
+    --accent3: #ff6b35;
+    --glow: rgba(0, 212, 255, 0.15);
+    --glow2: rgba(123, 47, 255, 0.2);
+    --hex-size: 252px;
+    --hex-gap: 16px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    min-height: 100vh;
+    overflow-x: hidden;
+    font-family: 'Share Tech Mono', monospace;
+    position: relative;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    animation: gridDrift 20s linear infinite;
+    z-index: 0;
+  }
+
+  @keyframes gridDrift {
+    from { background-position: 0 0; }
+    to   { background-position: 40px 40px; }
+  }
+
+  /* Radial ambient light */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 20% 30%, rgba(0,212,255,0.06) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 40% at 80% 70%, rgba(123,47,255,0.07) 0%, transparent 70%);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* Corner decorations */
+  .corner {
+    position: fixed;
+    width: 80px;
+    height: 80px;
+    z-index: 10;
+    opacity: 0.5;
+  }
+  .corner-tl { top: 16px; left: 16px; border-top: 1px solid var(--accent); border-left: 1px solid var(--accent); }
+  .corner-tr { top: 16px; right: 16px; border-top: 1px solid var(--accent); border-right: 1px solid var(--accent); }
+  .corner-bl { bottom: 16px; left: 16px; border-bottom: 1px solid var(--accent); border-left: 1px solid var(--accent); }
+  .corner-br { bottom: 16px; right: 16px; border-bottom: 1px solid var(--accent); border-right: 1px solid var(--accent); }
+
+  /* Scan line */
+  .scanline {
+    position: fixed;
+    left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(0,212,255,0.4), transparent);
+    z-index: 10;
+    animation: scan 8s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes scan {
+    from { top: -2px; }
+    to   { top: 100vh; }
+  }
+
+  /* Config panel */
+  #config-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 100;
+    background: rgba(4, 8, 16, 0.97);
+    border: 1px solid rgba(0,212,255,0.3);
+    padding: 32px;
+    width: 460px;
+    max-width: 90vw;
+    box-shadow: 0 0 60px rgba(0,212,255,0.1), inset 0 0 40px rgba(0,0,0,0.5);
+  }
+  #config-panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), transparent);
+  }
+
+  .config-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--accent);
+    margin-bottom: 24px;
+    text-transform: uppercase;
+  }
+
+  .config-field { margin-bottom: 16px; }
+  .config-label {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: rgba(0,212,255,0.5);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+  .config-input {
+    width: 100%;
+    background: rgba(0,212,255,0.05);
+    border: 1px solid rgba(0,212,255,0.2);
+    color: rgba(0,212,255,0.9);
+    padding: 10px 14px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .config-input:focus {
+    border-color: rgba(0,212,255,0.6);
+    box-shadow: 0 0 12px rgba(0,212,255,0.1);
+  }
+  .config-input::placeholder { color: rgba(0,212,255,0.25); }
+
+  .config-help {
+    font-size: 10px;
+    color: rgba(0,212,255,0.35);
+    margin-top: 5px;
+    line-height: 1.5;
+  }
+
+  .config-btn {
+    width: 100%;
+    margin-top: 0;
+    padding: 12px;
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .config-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.2s;
+    z-index: -1;
+  }
+  .config-btn:hover { color: var(--bg); }
+  .config-btn:hover::before { transform: scaleX(1); }
+
+  /* Main launcher grid */
+  #launcher {
+    position: relative;
+    z-index: 5;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 40px;
+  }
+
+  .hex-grid {
+    display: grid;
+    grid-template-columns: repeat(5, var(--hex-size));
+    gap: var(--hex-gap);
+    justify-content: center;
+  }
+
+  @media (max-width: 600px) {
+    :root { --hex-size: 42vw; --hex-gap: 10px; }
+    .hex-grid { grid-template-columns: repeat(2, var(--hex-size)); }
+  }
+
+  /* Hexagon tile */
+  .hex-tile {
+    position: relative;
+    width: var(--hex-size);
+    height: calc(var(--hex-size) * 1.1547);
+    cursor: pointer;
+    transition: transform 0.3s ease, filter 0.3s ease;
+    animation: hexAppear 0.6s ease both;
+  }
+
+  @keyframes hexAppear {
+    from { opacity: 0; transform: scale(0.6) rotate(10deg); }
+    to   { opacity: 1; transform: scale(1) rotate(0deg); }
+  }
+
+  .hex-tile:hover { transform: scale(1.08) translateY(-4px); }
+  .hex-tile:hover .hex-inner { filter: brightness(1.3); }
+  .hex-tile:hover .hex-glow { opacity: 1; }
+  .hex-tile:active { transform: scale(0.97); }
+
+  .hex-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .hex-inner {
+    position: absolute;
+    inset: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    background: var(--bg2);
+    transition: filter 0.3s;
+    overflow: hidden;
+  }
+
+  .hex-inner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Placeholder pattern */
+  .hex-placeholder {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .hex-number {
+    font-family: 'Orbitron', monospace;
+    font-size: 28px;
+    font-weight: 900;
+    color: rgba(0,212,255,0.15);
+    position: relative;
+    z-index: 2;
+  }
+
+  .hex-glow {
+    position: absolute;
+    inset: -4px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    filter: blur(8px);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  }
+
+  /* Overlay shimmer on hover */
+  .hex-tile:hover .hex-shimmer {
+    animation: shimmer 0.6s ease;
+  }
+  @keyframes shimmer {
+    0%   { transform: translateX(-100%) skewX(-20deg); }
+    100% { transform: translateX(200%) skewX(-20deg); }
+  }
+  .hex-shimmer {
+    position: absolute;
+    inset: 0;
+    width: 40%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  /* Status bar */
+  #status-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 10px 24px;
+    background: rgba(4,8,16,0.9);
+    border-top: 1px solid rgba(0,212,255,0.1);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: rgba(0,212,255,0.3);
+  }
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50%      { opacity: 0.4; }
+  }
+  .status-dot.error { background: var(--accent3); box-shadow: 0 0 6px var(--accent3); }
+
+  /* Config gear button */
+  #config-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 50;
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: 1px solid rgba(0,212,255,0.2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    color: rgba(0,212,255,0.4);
+    font-size: 16px;
+  }
+  #config-toggle:hover {
+    border-color: rgba(0,212,255,0.5);
+    box-shadow: 0 0 12px rgba(0,212,255,0.1);
+    color: var(--accent);
+  }
+
+  /* Loading */
+  #loading {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+  }
+  .load-ring {
+    width: 60px;
+    height: 60px;
+    border: 1px solid rgba(0,212,255,0.1);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .load-text {
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: rgba(0,212,255,0.4);
+    animation: blink 1.4s ease-in-out infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* Error state */
+  .error-msg {
+    font-size: 10px;
+    color: rgba(255,107,53,0.7);
+    letter-spacing: 1px;
+    max-width: 360px;
+    line-height: 1.6;
+    padding: 12px;
+    border: 1px solid rgba(255,107,53,0.2);
+    background: rgba(255,107,53,0.05);
+    margin-top: 8px;
+  }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="corner corner-tl"></div>
+<div class="corner corner-tr"></div>
+<div class="corner corner-bl"></div>
+<div class="corner corner-br"></div>
+<div class="scanline"></div>
+
+<!-- Loading screen -->
+<div id="loading">
+  <div class="load-ring"></div>
+  <div class="load-text">INITIALISING</div>
+</div>
+
+<!-- Config panel -->
+<div id="config-panel">
+  <div class="config-title">⬡ &nbsp; System Configuration</div>
+
+  <div class="config-field">
+    <label class="config-label" for="sheet-id">Google Sheet ID</label>
+    <input class="config-input" id="sheet-id" type="text" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms" />
+    <div class="config-help">From your sheet URL: /spreadsheets/d/<strong style="color:rgba(0,212,255,0.5)">THIS_PART</strong>/edit</div>
+  </div>
+
+  <div class="config-field">
+    <label class="config-label" for="api-key">Google Sheets API Key</label>
+    <input class="config-input" id="api-key" type="password" placeholder="AIza..." />
+    <div class="config-help">From Google Cloud Console → APIs & Services → Credentials</div>
+  </div>
+
+  <button class="config-btn" onclick="saveAndLoad()">INITIALISE</button>
+</div>
+
+<!-- Main launcher -->
+<div id="launcher" class="hidden">
+  <div class="hex-grid" id="hex-grid"></div>
+</div>
+
+<!-- Config toggle button -->
+<button id="config-toggle" class="hidden" onclick="showConfig()" title="Configure">⚙</button>
+
+<!-- Status bar -->
+<div id="status-bar">
+  <div class="status-dot" id="status-dot"></div>
+  <span id="status-text">STANDBY</span>
+  <span style="margin-left:auto;opacity:0.5" id="count-text"></span>
+</div>
+
+<script>
+const STORAGE_KEY = 'launcher_cfg';
+
+let cfg = {};
+
+function loadConfig() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) cfg = JSON.parse(saved);
+  } catch(e) {}
+}
+
+function saveConfig() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg)); } catch(e) {}
+}
+
+function init() {
+  loadConfig();
+  document.getElementById('loading').classList.add('hidden');
+
+  if (cfg.apiKey && cfg.sheetId) {
+    document.getElementById('sheet-id').value = cfg.sheetId;
+    document.getElementById('api-key').value  = cfg.apiKey;
+    fetchAndRender();
+  } else {
+    document.getElementById('config-panel').style.display = '';
+  }
+}
+
+async function saveAndLoad() {
+  cfg = {
+    sheetId:  document.getElementById('sheet-id').value.trim(),
+    apiKey:   document.getElementById('api-key').value.trim()
+  };
+
+  if (!cfg.sheetId || !cfg.apiKey) {
+    setStatus('MISSING CONFIG', true);
+    return;
+  }
+
+  saveConfig();
+  fetchAndRender();
+}
+
+async function fetchAndRender() {
+  document.getElementById('config-panel').classList.add('hidden');
+  document.getElementById('launcher').classList.remove('hidden');
+  document.getElementById('config-toggle').classList.remove('hidden');
+  setStatus('FETCHING DATA...');
+
+  const { sheetId, apiKey } = cfg;
+  const range = encodeURIComponent('App_Links!A:C');
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.error?.message || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    const rows = (data.values || []).filter(row => row[1] && row[1].trim().startsWith('http'));
+    const apps = rows.map(row => ({ name: row[0] || '', url: row[1].trim(), logo: (row[2] || '').trim() }));
+
+    if (!apps.length) throw new Error('No valid URLs found in column B of App_Links');
+    renderTiles(apps);
+    setStatus('SYSTEMS ONLINE');
+    document.getElementById('count-text').textContent = `${apps.length} NODES`;
+  } catch(e) {
+    setStatus(`ERROR: ${e.message}`, true);
+    renderError(e.message);
+  }
+}
+
+
+function showConfig() {
+  document.getElementById('config-panel').classList.remove('hidden');
+  document.getElementById('launcher').classList.add('hidden');
+  document.getElementById('config-toggle').classList.add('hidden');
+}
+
+function setStatus(msg, isError = false) {
+  document.getElementById('status-text').textContent = msg;
+  const dot = document.getElementById('status-dot');
+  dot.classList.toggle('error', isError);
+}
+
+function renderError(msg) {
+  const grid = document.getElementById('hex-grid');
+  grid.innerHTML = `<div class="error-msg">SYSTEM FAULT: ${msg}<br><br>Check your Sheet ID, API key, and that the Sheets API is enabled in Google Cloud Console.</div>`;
+}
+
+// Colour palettes per tile (cycles)
+const PALETTES = [
+  { stroke: '#00d4ff', glow: 'rgba(0,212,255,0.3)',  face: '#00d4ff', bg: 'rgba(0,212,255,0.04)'  },
+  { stroke: '#7b2fff', glow: 'rgba(123,47,255,0.3)', face: '#7b2fff', bg: 'rgba(123,47,255,0.05)' },
+  { stroke: '#ff6b35', glow: 'rgba(255,107,53,0.3)', face: '#ff6b35', bg: 'rgba(255,107,53,0.04)' },
+  { stroke: '#00ffaa', glow: 'rgba(0,255,170,0.3)',  face: '#00ffaa', bg: 'rgba(0,255,170,0.03)'  },
+  { stroke: '#ff3399', glow: 'rgba(255,51,153,0.3)', face: '#ff3399', bg: 'rgba(255,51,153,0.04)' },
+];
+
+function toDriveDirectUrl(url) {
+  if (!url) return '';
+  const viewMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (viewMatch) return `https://drive.google.com/uc?export=view&id=${viewMatch[1]}`;
+  return url;
+}
+
+function renderTiles(apps) {
+  const grid = document.getElementById('hex-grid');
+  grid.innerHTML = '';
+
+  apps.forEach(({ name, url, logo }, i) => {
+    const logoUrl = toDriveDirectUrl(logo);
+    const p = PALETTES[i % PALETTES.length];
+    const delay = i * 80;
+    const num   = String(i + 1).padStart(2, '0');
+
+    const tile = document.createElement('div');
+    tile.className = 'hex-tile';
+    tile.style.animationDelay = `${delay}ms`;
+    tile.title = name || url;
+    tile.onclick = () => window.location.href = url;
+
+    tile.innerHTML = `
+      <!-- Glow layer -->
+      <div class="hex-glow" style="background:${p.glow}"></div>
+
+      <!-- SVG hexagon border -->
+      <svg class="hex-svg" viewBox="0 0 100 115.47" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="f${i}">
+            <feGaussianBlur stdDeviation="1.5" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <!-- Outer glow hex -->
+        <polygon points="50,2 98,27.74 98,87.73 50,113.47 2,87.73 2,27.74"
+          fill="none" stroke="${p.stroke}" stroke-width="0.4" opacity="0.3" filter="url(#f${i})"/>
+        <!-- Main border hex -->
+        <polygon points="50,4 96,28.74 96,86.73 50,111.47 4,86.73 4,28.74"
+          fill="none" stroke="${p.stroke}" stroke-width="0.8" opacity="0.8"/>
+        <!-- Inner border hex -->
+        <polygon points="50,10 90,31.74 90,83.73 50,107.47 10,83.73 10,31.74"
+          fill="none" stroke="${p.stroke}" stroke-width="0.3" opacity="0.25"/>
+        <!-- Corner tick marks -->
+        <line x1="50" y1="2" x2="50" y2="10" stroke="${p.stroke}" stroke-width="1.5" opacity="0.9"/>
+        <line x1="98" y1="27.74" x2="91" y2="31.74" stroke="${p.stroke}" stroke-width="1.5" opacity="0.9"/>
+        <line x1="98" y1="87.73" x2="91" y2="83.73" stroke="${p.stroke}" stroke-width="1.5" opacity="0.9"/>
+        <line x1="50" y1="113.47" x2="50" y2="105.47" stroke="${p.stroke}" stroke-width="1.5" opacity="0.9"/>
+        <line x1="2" y1="87.73" x2="9" y2="83.73" stroke="${p.stroke}" stroke-width="1.5" opacity="0.9"/>
+        <line x1="2" y1="27.74" x2="9" y2="31.74" stroke="${p.stroke}" stroke-width="1.5" opacity="0.9"/>
+        <!-- Node ID text -->
+        <text x="50" y="108" text-anchor="middle" font-family="'Orbitron',monospace" font-size="5"
+          fill="${p.stroke}" opacity="0.6" letter-spacing="1">${num}</text>
+      </svg>
+
+      <!-- Inner clipped face -->
+      <div class="hex-inner" style="background:${p.bg}">
+        ${logoUrl ? `<img src="https://wsrv.nl/?url=${encodeURIComponent(logoUrl)}&n=-1" alt="${name}" style="width:115%;height:115%;object-fit:contain;opacity:0.85;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="hex-placeholder" style="display:none">` : `<div class="hex-placeholder">`}
+          <!-- Decorative circuit lines SVG -->
+          <svg width="100%" height="100%" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0;opacity:0.18">
+            <line x1="60" y1="0" x2="60" y2="45" stroke="${p.stroke}" stroke-width="0.8"/>
+            <line x1="60" y1="45" x2="90" y2="60" stroke="${p.stroke}" stroke-width="0.8"/>
+            <line x1="60" y1="45" x2="30" y2="60" stroke="${p.stroke}" stroke-width="0.8"/>
+            <line x1="90" y1="60" x2="90" y2="80" stroke="${p.stroke}" stroke-width="0.8"/>
+            <line x1="30" y1="60" x2="30" y2="80" stroke="${p.stroke}" stroke-width="0.8"/>
+            <circle cx="60" cy="45" r="3" fill="${p.stroke}"/>
+            <circle cx="90" cy="60" r="2" fill="${p.stroke}"/>
+            <circle cx="30" cy="60" r="2" fill="${p.stroke}"/>
+            <circle cx="90" cy="80" r="1.5" fill="${p.stroke}"/>
+            <circle cx="30" cy="80" r="1.5" fill="${p.stroke}"/>
+          </svg>
+          <div class="hex-number">${num}</div>
+        </div>
+        <div class="hex-shimmer"></div>
+      </div>
+    `;
+
+    grid.appendChild(tile);
+  });
+}
+
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
