@@ -194,21 +194,25 @@
   }
 
   .hex-grid {
-    display: grid;
-    grid-template-columns: repeat(5, var(--hex-size));
-    gap: var(--hex-gap);
+    display: flex;
+    flex-wrap: wrap;
     justify-content: center;
+    gap: var(--hex-gap);
+    max-width: calc(5 * var(--hex-size) + 4 * var(--hex-gap));
+  }
+
+  .hex-tile {
+    flex: 0 0 var(--hex-size);
   }
 
   @media (max-width: 600px) {
     :root { --hex-size: 42vw; --hex-gap: 10px; }
-    .hex-grid { grid-template-columns: repeat(2, var(--hex-size)); }
+    .hex-grid { max-width: calc(2 * var(--hex-size) + var(--hex-gap)); }
   }
 
   /* Hexagon tile */
   .hex-tile {
     position: relative;
-    width: var(--hex-size);
     height: calc(var(--hex-size) * 1.1547);
     cursor: pointer;
     transition: transform 0.3s ease, filter 0.3s ease;
@@ -498,7 +502,7 @@ async function fetchAndRender() {
   setStatus('FETCHING DATA...');
 
   const { sheetId, apiKey } = cfg;
-  const range = encodeURIComponent('App_Links!A:C');
+  const range = encodeURIComponent('App_Links!A:D');
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
 
   try {
@@ -508,7 +512,7 @@ async function fetchAndRender() {
       throw new Error(err?.error?.message || `HTTP ${res.status}`);
     }
     const data = await res.json();
-    const rows = (data.values || []).filter(row => row[1] && row[1].trim().startsWith('http'));
+    const rows = (data.values || []).filter(row => row[1] && row[1].trim().startsWith('http') && (row[3] || '').trim() === '1');
     const apps = rows.map(row => ({ name: row[0] || '', url: row[1].trim(), logo: (row[2] || '').trim() }));
 
     if (!apps.length) throw new Error('No valid URLs found in column B of App_Links');
