@@ -502,7 +502,7 @@ async function fetchAndRender() {
   setStatus('FETCHING DATA...');
 
   const { sheetId, apiKey } = cfg;
-  const range = encodeURIComponent('App_Links!A:D');
+  const range = encodeURIComponent('App_Links!A:E');
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
 
   try {
@@ -513,7 +513,7 @@ async function fetchAndRender() {
     }
     const data = await res.json();
     const rows = (data.values || []).filter(row => row[1] && row[1].trim().startsWith('http') && (row[3] || '').trim() === '1');
-    const apps = rows.map(row => ({ name: row[0] || '', url: row[1].trim(), logo: (row[2] || '').trim() }));
+    const apps = rows.map(row => ({ name: row[0] || '', url: row[1].trim(), logo: (row[2] || '').trim(), scale: parseFloat(row[4]) || 1.0 }));
 
     if (!apps.length) throw new Error('No valid URLs found in column B of App_Links');
     renderTiles(apps);
@@ -563,7 +563,7 @@ function renderTiles(apps) {
   const grid = document.getElementById('hex-grid');
   grid.innerHTML = '';
 
-  apps.forEach(({ name, url, logo }, i) => {
+  apps.forEach(({ name, url, logo, scale }, i) => {
     const logoUrl = toDriveDirectUrl(logo);
     const p = PALETTES[i % PALETTES.length];
     const delay = i * 80;
@@ -610,7 +610,7 @@ function renderTiles(apps) {
 
       <!-- Inner clipped face -->
       <div class="hex-inner" style="background:${p.bg}">
-        ${logoUrl ? `<img src="https://wsrv.nl/?url=${encodeURIComponent(logoUrl)}&n=-1" alt="${name}" style="width:115%;height:115%;object-fit:contain;opacity:0.85;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        ${logoUrl ? `<img src="https://wsrv.nl/?url=${encodeURIComponent(logoUrl)}&n=-1" alt="${name}" style="object-fit:contain;opacity:0.85;transform:scale(${scale});" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
         <div class="hex-placeholder" style="display:none">` : `<div class="hex-placeholder">`}
           <!-- Decorative circuit lines SVG -->
           <svg width="100%" height="100%" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0;opacity:0.18">
