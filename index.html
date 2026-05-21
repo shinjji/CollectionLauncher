@@ -217,6 +217,9 @@
     cursor: pointer;
     transition: transform 0.3s ease, filter 0.3s ease;
     animation: hexAppear 0.6s ease both;
+    text-decoration: none;
+    color: inherit;
+    display: block;
   }
 
   @keyframes hexAppear {
@@ -569,11 +572,11 @@ function renderTiles(apps) {
     const delay = i * 80;
     const num   = String(i + 1).padStart(2, '0');
 
-    const tile = document.createElement('div');
+    const tile = document.createElement('a');
+    tile.href = url;
     tile.className = 'hex-tile';
     tile.style.animationDelay = `${delay}ms`;
     tile.title = name || url;
-    tile.onclick = () => window.location.href = url;
 
     tile.innerHTML = `
       <!-- Glow layer -->
